@@ -27,8 +27,7 @@ function DashboardHeaderRight() {
 
   const handleAddTransaction = () => {
     closeMenu();
-    
-    console.log("Navigate to Add Transaction screen");
+    router.push("/add");
   };
 
   return (
