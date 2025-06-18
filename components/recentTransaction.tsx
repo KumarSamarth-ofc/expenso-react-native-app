@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { ScrollView, View, Text } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/lib/auth-context";
 import { databases, DATABASE_ID } from "@/lib/appwrite";
 import { Query } from "react-native-appwrite";
@@ -12,28 +13,30 @@ const RecentTransactions = () => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<any[]>([]);
 
-  useEffect(() => {
+  const fetchTransactions = async () => {
     if (!user) return;
+    try {
+      const res = await databases.listDocuments(
+        DATABASE_ID,
+        TRANSACTIONS_COLLECTION_ID,
+        [
+          Query.equal("user_id", user.$id),
+          Query.orderDesc("$createdAt"),
+          Query.limit(10),
+        ]
+      );
+      setTransactions(res.documents);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+    }
+  };
 
-    const fetchTransactions = async () => {
-      try {
-        const res = await databases.listDocuments(
-          DATABASE_ID,
-          TRANSACTIONS_COLLECTION_ID,
-          [
-            Query.equal("user_id", user.$id),
-            Query.orderDesc("$createdAt"),
-            Query.limit(10),
-          ]
-        );
-        setTransactions(res.documents);
-      } catch (err) {
-        console.error("Error fetching transactions:", err);
-      }
-    };
-
-    fetchTransactions();
-  }, [user]);
+  // Refetch on screen focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions();
+    }, [user])
+  );
 
   return (
     <View style={{ marginTop: 20 }}>
